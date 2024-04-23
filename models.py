@@ -2,13 +2,6 @@ import torch
 from torch import nn
 from modules import NModel
 from modules import CrossLinear, CrossConv2d
-
-def num_flat_features(x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
 class MLP3(NModel):
     def __init__(self):
         super().__init__()
@@ -55,7 +48,7 @@ class LeNet(NModel):
         x = self.relu(x)
         x = self.pool(x)
         
-        x = x.view(-1, num_flat_features(x))
+        x = self.unpack_flattern(x)
         
         x = self.fc1(x)
         x = self.relu(x)
@@ -63,5 +56,57 @@ class LeNet(NModel):
         x = self.fc2(x)
         x = self.relu(x)
         
+        x = self.fc3(x)
+        return x
+
+
+class CIFAR(NModel):
+    def __init__(self, N=6):
+        super().__init__()
+        N_weight=4
+        N_ADC=4
+        array_size=32
+
+        self.conv1 = CrossConv2d(3, 64, 3, padding=1)
+        self.conv2 = CrossConv2d(64, 64, 3, padding=1)
+        self.pool1 = nn.MaxPool2d(2,2)
+
+        self.conv3 = CrossConv2d(64,128,3, padding=1)
+        self.conv4 = CrossConv2d(128,128,3, padding=1)
+        self.pool2 = nn.MaxPool2d(2,2)
+
+        self.conv5 = CrossConv2d(128,256,3, padding=1)
+        self.conv6 = CrossConv2d(256,256,3, padding=1)
+        self.pool3 = nn.MaxPool2d(2,2)
+        
+        self.fc1 = CrossLinear(256 * 4 * 4, 1024)
+        self.fc2 = CrossLinear(1024, 1024)
+        self.fc3 = CrossLinear(1024, 10)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.relu(x)
+        x = self.pool1(x)
+
+        x = self.conv3(x)
+        x = self.relu(x)
+        x = self.conv4(x)
+        x = self.relu(x)
+        x = self.pool2(x)
+
+        x = self.conv5(x)
+        x = self.relu(x)
+        x = self.conv6(x)
+        x = self.relu(x)
+        x = self.pool3(x)
+        
+        x = self.unpack_flattern(x)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        x = self.relu(x)
         x = self.fc3(x)
         return x

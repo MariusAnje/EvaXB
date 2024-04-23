@@ -113,7 +113,12 @@ class CrossConv2d(NModule):
             x += self.op.bias.reshape(1,-1,1,1).expand_as(x)
         return x
         
-
+def num_flat_features(x):
+    size = x.size()[1:]  # all dimensions except the batch dimension
+    num_features = 1
+    for s in size:
+        num_features *= s
+    return num_features
 
 class NModel(nn.Module):
     def __init__(self):
@@ -155,3 +160,6 @@ class NModel(nn.Module):
         for mo in self.modules():
             if isinstance(mo, NModule):
                 mo.normalize()
+    
+    def unpack_flattern(self, x):
+        return x.view(-1, num_flat_features(x))
