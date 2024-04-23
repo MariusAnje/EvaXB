@@ -31,6 +31,7 @@ class NModule(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.scale = 1
+        self.fast = False
 
     def set_noise_multiple(self, noise_type, dev_var, rate_max=0, rate_zero=0, write_var=0, **kwargs):
         set_noise_multiple(self, noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
@@ -116,7 +117,6 @@ class NModel(nn.Module):
         super().__init__()
         self.original_w = None
         self.original_b = None
-        self.fast = False
     
     def set_noise_multiple(self, noise_type, dev_var, rate_max=0, rate_zero=0, write_var=0, **kwargs):
         for mo in self.modules():
