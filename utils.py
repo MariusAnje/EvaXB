@@ -250,8 +250,8 @@ def MTrain(model_group, epochs, header, noise_type, dev_var, rate_max, rate_zero
         model.train()
         model.make_fast()
         running_loss = 0.
-        for images, labels in tqdm(trainloader):
-        # for images, labels in trainloader:
+        # for images, labels in tqdm(trainloader):
+        for images, labels in trainloader:
             model.clear_noise()
             if set_noise:
                 model.set_noise_multiple(noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)

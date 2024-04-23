@@ -4,14 +4,14 @@ from modules import NModel
 from modules import CrossLinear, CrossConv2d
 class MLP3(NModel):
     def __init__(self):
-        super().__init__()
+        super().__init__("MLP3")
         hidden = 8
-        N_weight=4
-        N_ADC=4
-        array_size=32
-        self.fc1 = CrossLinear(28*28, hidden, N_weight=N_weight, N_ADC=N_ADC)
-        self.fc2 = CrossLinear(hidden,hidden, N_weight=N_weight, N_ADC=N_ADC)
-        self.fc3 = CrossLinear(hidden,10, N_weight=N_weight, N_ADC=N_ADC)
+        # self.N_weight=4
+        # self.N_ADC=4
+        # self.array_size=32
+        self.fc1 = self.get_linear(28*28, hidden)
+        self.fc2 = self.get_linear(hidden,hidden)
+        self.fc3 = self.get_linear(hidden,10)
         self.relu = nn.ReLU()
     
     def forward(self, x):
@@ -26,10 +26,7 @@ class MLP3(NModel):
 class LeNet(NModel):
 
     def __init__(self):
-        super().__init__()
-        self.N_weight=4
-        self.N_ADC=4
-        self.array_size=32
+        super().__init__("LeNet")
         self.conv1 = self.get_conv2d(1, 6, 3, padding=1)
         self.conv2 = self.get_conv2d(6, 16, 3, padding=1)
         # an affine operation: y = Wx + b
@@ -61,11 +58,11 @@ class LeNet(NModel):
 
 
 class CIFAR(NModel):
-    def __init__(self, N=6):
-        super().__init__()
-        self.N_weight=6
-        self.N_ADC=6
-        self.array_size=64
+    def __init__(self):
+        super().__init__("CIFAR")
+        # self.N_weight=6
+        # self.N_ADC=6
+        # self.array_size=64
 
         self.conv1 = self.get_conv2d(3, 64, 3, padding=1)
         self.conv2 = self.get_conv2d(64, 64, 3, padding=1)

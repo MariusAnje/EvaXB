@@ -4,6 +4,7 @@ from torch import nn
 from Functions import QuantFunction, sepMM, sepConv2d
 from noise import set_noise_multiple
 import numpy as np
+from configs import quant_config
 
 class Quant(nn.Module):
     def __init__(self, N, running=True):
@@ -121,10 +122,17 @@ def num_flat_features(x):
     return num_features
 
 class NModel(nn.Module):
-    def __init__(self):
+    def __init__(self, model_name):
         super().__init__()
         self.original_w = None
         self.original_b = None
+        self.init_config(model_name)
+    
+    def init_config(self, model_name):
+        config = quant_config["LeNet"]
+        self.N_weight=config.N_weight
+        self.N_ADC=config.N_ADC
+        self.array_size=config.array_size
     
     def set_noise_multiple(self, noise_type, dev_var, rate_max=0, rate_zero=0, write_var=0, **kwargs):
         for mo in self.modules():
