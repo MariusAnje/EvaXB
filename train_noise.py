@@ -38,6 +38,8 @@ if __name__ == "__main__":
             help='whether to use tqdm')
     args = parser.parse_args()
 
+    print(args)
+
     BS = 128
     NW = 4
     trainloader, _, testloader = get_dataset(args, BS, NW)
@@ -47,4 +49,4 @@ if __name__ == "__main__":
     criteria = torch.nn.CrossEntropyLoss()
     model_group = model, criteria, optimizer, scheduler, device, trainloader, testloader
 
-    MTrain(model_group, 10, 1, "Gaussian", 0, 1, 1, 0, verbose=True, N=1, m=1)
+    MTrain(model_group, args.train_epoch, args.header, "Gaussian", args.train_var, 1, 1, 0, verbose=True, N=1, m=1)

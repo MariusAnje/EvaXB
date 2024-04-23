@@ -5,9 +5,10 @@ import torchvision
 import torchvision.transforms as transforms
 from torch import nn
 import modules
-from models import MLP3
+from models import MLP3, LeNet
 from torch import optim
 import logging
+from tqdm import tqdm
 
 def get_dataset(args, BS, NW):
     if args.model == "CIFAR" or args.model == "Res18" or args.model == "QCIFAR" or args.model == "QRes18" or args.model == "QDENSE":
@@ -108,8 +109,8 @@ def get_model(args):
 #         model = SMLP3()
 #     elif args.model == "MLP4":
 #         model = SMLP4()
-#     elif args.model == "LeNet":
-#         model = SLeNet()
+    elif args.model == "LeNet":
+        model = LeNet()
 #     elif args.model == "CIFAR":
 #         model = CIFAR()
 #     elif args.model == "Res18":
@@ -247,6 +248,7 @@ def MTrain(model_group, epochs, header, noise_type, dev_var, rate_max, rate_zero
     for i in range(epochs):
         start_time = time.time()
         model.train()
+        model.make_fast()
         running_loss = 0.
         # for images, labels in tqdm(trainloader):
         for images, labels in trainloader:
@@ -260,6 +262,7 @@ def MTrain(model_group, epochs, header, noise_type, dev_var, rate_max, rate_zero
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
+        model.make_slow()
         test_acc = MEachEval(model_group, noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
         model.clear_noise()
         noise_free_acc = CEval(model_group)
