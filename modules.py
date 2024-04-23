@@ -163,3 +163,9 @@ class NModel(nn.Module):
     
     def unpack_flattern(self, x):
         return x.view(-1, num_flat_features(x))
+    
+    def get_conv2d(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'):
+        return CrossConv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode, N_weight=self.N_weight,N_ADC=self.N_ADC,array_size=self.array_size)
+
+    def get_linear(self, in_features, out_features, bias=True):
+        return CrossLinear(in_features, out_features, bias, N_weight=self.N_weight,N_ADC=self.N_ADC,array_size=self.array_size)

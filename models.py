@@ -27,15 +27,15 @@ class LeNet(NModel):
 
     def __init__(self):
         super().__init__()
-        N_weight=4
-        N_ADC=4
-        array_size=32
-        self.conv1 = CrossConv2d(1, 6, 3, padding=1)
-        self.conv2 = CrossConv2d(6, 16, 3, padding=1)
+        self.N_weight=4
+        self.N_ADC=4
+        self.array_size=32
+        self.conv1 = self.get_conv2d(1, 6, 3, padding=1)
+        self.conv2 = self.get_conv2d(6, 16, 3, padding=1)
         # an affine operation: y = Wx + b
-        self.fc1 = CrossLinear(16 * 7 * 7, 120)  # 6*6 from image dimension
-        self.fc2 = CrossLinear(120, 84)
-        self.fc3 = CrossLinear(84, 10)
+        self.fc1 = self.get_linear(16 * 7 * 7, 120)  # 6*6 from image dimension
+        self.fc2 = self.get_linear(120, 84)
+        self.fc3 = self.get_linear(84, 10)
         self.pool = nn.MaxPool2d(2)
         self.relu = nn.ReLU()
 
@@ -63,25 +63,25 @@ class LeNet(NModel):
 class CIFAR(NModel):
     def __init__(self, N=6):
         super().__init__()
-        N_weight=4
-        N_ADC=4
-        array_size=32
+        self.N_weight=6
+        self.N_ADC=6
+        self.array_size=64
 
-        self.conv1 = CrossConv2d(3, 64, 3, padding=1)
-        self.conv2 = CrossConv2d(64, 64, 3, padding=1)
+        self.conv1 = self.get_conv2d(3, 64, 3, padding=1)
+        self.conv2 = self.get_conv2d(64, 64, 3, padding=1)
         self.pool1 = nn.MaxPool2d(2,2)
 
-        self.conv3 = CrossConv2d(64,128,3, padding=1)
-        self.conv4 = CrossConv2d(128,128,3, padding=1)
+        self.conv3 = self.get_conv2d(64,128,3, padding=1)
+        self.conv4 = self.get_conv2d(128,128,3, padding=1)
         self.pool2 = nn.MaxPool2d(2,2)
 
-        self.conv5 = CrossConv2d(128,256,3, padding=1)
-        self.conv6 = CrossConv2d(256,256,3, padding=1)
+        self.conv5 = self.get_conv2d(128,256,3, padding=1)
+        self.conv6 = self.get_conv2d(256,256,3, padding=1)
         self.pool3 = nn.MaxPool2d(2,2)
         
-        self.fc1 = CrossLinear(256 * 4 * 4, 1024)
-        self.fc2 = CrossLinear(1024, 1024)
-        self.fc3 = CrossLinear(1024, 10)
+        self.fc1 = self.get_linear(256 * 4 * 4, 1024)
+        self.fc2 = self.get_linear(1024, 1024)
+        self.fc3 = self.get_linear(1024, 10)
         self.relu = nn.ReLU()
 
     def forward(self, x):
@@ -102,7 +102,7 @@ class CIFAR(NModel):
         x = self.conv6(x)
         x = self.relu(x)
         x = self.pool3(x)
-        
+
         x = self.unpack_flattern(x)
         x = self.fc1(x)
         x = self.relu(x)
