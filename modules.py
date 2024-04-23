@@ -76,8 +76,8 @@ class CrossLinear(NModule):
     def forward(self, x):
         if self.fast:
             x = self.q_a_train(nn.functional.linear(x, self.q_w_f(self.op.weight) + self.noise))
-            for m in self.q_a_f:
-                m.running_range.data = self.q_a_train.running_range.data
+            # for m in self.q_a_f:
+            #     m.running_range.data = self.q_a_train.running_range.data
         else:
             x = sepMM(x, self.q_w_f(self.op.weight) + self.noise, self.q_a_f, self.array_size)
         if self.op.bias is not None:
@@ -103,10 +103,10 @@ class CrossConv2d(NModule):
     def forward(self, x):
         if self.fast:
             x = self.q_a_train(nn.functional.conv2d(x, self.q_w_f(self.op.weight) + self.noise, padding=self.op.padding, stride=self.op.stride))
-            for m in self.q_a_f:
-                for k in m:
-                    for v in k:
-                        v.running_range.data = self.q_a_train.running_range.data
+            # for m in self.q_a_f:
+            #     for k in m:
+            #         for v in k:
+            #             v.running_range.data = self.q_a_train.running_range.data
         else:
             x = sepConv2d(x, self.q_w_f(self.op.weight) + self.noise, self.q_a_f, self.array_size, padding=self.op.padding)
         if self.op.bias is not None:
