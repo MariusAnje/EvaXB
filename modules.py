@@ -129,7 +129,7 @@ class NModel(nn.Module):
         self.init_config(model_name)
     
     def init_config(self, model_name):
-        config = quant_config["LeNet"]
+        config = quant_config[model_name]
         self.N_weight=config.N_weight
         self.N_ADC=config.N_ADC
         self.array_size=config.array_size
