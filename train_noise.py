@@ -44,7 +44,8 @@ if __name__ == "__main__":
     NW = 4
     trainloader, _, testloader = get_dataset(args, BS, NW)
     model = get_model(args)
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    # device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    device = torch.device(args.device)
     model, optimizer, w_optimizer, scheduler = prepare_model(model, device, args)
     criteria = torch.nn.CrossEntropyLoss()
     model_group = model, criteria, optimizer, scheduler, device, trainloader, testloader

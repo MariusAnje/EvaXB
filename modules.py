@@ -68,13 +68,16 @@ class CrossLinear(NModule):
         self.register_buffer('mask', torch.ones_like(self.op.weight))
         self.running_act = None
         self.q_w_f = Quant(N_weight, False)
+        self.q_a_train = Quant(N_ADC, True)
         array_number = int(np.ceil(in_features / array_size)) # not exactly this meaning but close
-        self.q_a_f = [Quant(N_ADC, True) for _ in range(array_number)]
+        self.q_a_f = nn.ModuleList([Quant(N_ADC, True) for _ in range(array_number)])
         self.array_size = array_size
     
     def forward(self, x):
         if self.fast:
-            x = nn.functional.linear(x, self.q_w_f(self.op.weight) + self.noise)
+            x = self.q_a_train(nn.functional.linear(x, self.q_w_f(self.op.weight) + self.noise))
+            for m in self.q_a_f:
+                m.running_range.data = self.q_a_train.running_range.data
         else:
             x = sepMM(x, self.q_w_f(self.op.weight) + self.noise, self.q_a_f, self.array_size)
         if self.op.bias is not None:
@@ -94,16 +97,16 @@ class CrossConv2d(NModule):
         self.q_w_f = Quant(N_weight, False)
         self.q_a_train = Quant(N_ADC, True)
         array_number = int(np.ceil(in_channels / array_size)) # not exactly this meaning but close
-        self.q_a_f = [[[Quant(N_ADC, True) for _ in range(self.op.kernel_size[1])] for _ in range(self.op.kernel_size[0])] for _ in range(array_number)]
+        self.q_a_f = nn.ModuleList([nn.ModuleList([nn.ModuleList([Quant(N_ADC, True) for _ in range(self.op.kernel_size[1])]) for _ in range(self.op.kernel_size[0])]) for _ in range(array_number)])
         self.array_size = array_size
 
     def forward(self, x):
         if self.fast:
             x = self.q_a_train(nn.functional.conv2d(x, self.q_w_f(self.op.weight) + self.noise, padding=self.op.padding, stride=self.op.stride))
-            for i in range(len(self.q_a_f)):
-                for j in range(len(self.q_a_f[0])):
-                    for k in range(len(self.q_a_f[0][0])):
-                        self.q_a_f[i][j][k].running_range = self.q_a_train.running_range
+            for m in self.q_a_f:
+                for k in m:
+                    for v in k:
+                        v.running_range.data = self.q_a_train.running_range.data
         else:
             x = sepConv2d(x, self.q_w_f(self.op.weight) + self.noise, self.q_a_f, self.array_size, padding=self.op.padding)
         if self.op.bias is not None:
