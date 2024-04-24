@@ -25,7 +25,7 @@ def get_dataset(args, BS, NW):
                 ])
         trainset = torchvision.datasets.CIFAR10(root='~/Private/data', train=True, download=False, transform=train_transform)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=BS, shuffle=True, num_workers=4)
-        secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div, shuffle=False, num_workers=4)
+        # secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div, shuffle=False, num_workers=4)
         testset = torchvision.datasets.CIFAR10(root='~/Private/data', train=False, download=False, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=BS, shuffle=False, num_workers=4)
     elif args.model == "QCIFAR100" or args.model == "QResC100":
@@ -42,7 +42,7 @@ def get_dataset(args, BS, NW):
                 ])
         trainset = torchvision.datasets.CIFAR100(root='~/Private/data', train=True, download=False, transform=train_transform)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=BS, shuffle=True, num_workers=4)
-        secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div, shuffle=False, num_workers=4)
+        # secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div, shuffle=False, num_workers=4)
         testset = torchvision.datasets.CIFAR100(root='~/Private/data', train=False, download=False, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=BS, shuffle=False, num_workers=4)
     elif args.model == "TIN" or args.model == "QTIN" or args.model == "QVGG":
@@ -60,7 +60,7 @@ def get_dataset(args, BS, NW):
                 ])
         trainset = torchvision.datasets.ImageFolder(root='~/Private/data/tiny-imagenet-200/train', transform=train_transform)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=BS, shuffle=True, num_workers=8)
-        secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div, shuffle=False, num_workers=8)
+        # secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div, shuffle=False, num_workers=8)
         testset = torchvision.datasets.ImageFolder(root='~/Private/data/tiny-imagenet-200/val',  transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=BS, shuffle=False, num_workers=8)
     elif args.model == "QVGGIN" or args.model == "QResIN":
@@ -93,14 +93,15 @@ def get_dataset(args, BS, NW):
                                                 download=False, transform=transforms.ToTensor())
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=BS,
                                                 shuffle=True, num_workers=NW)
-        secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div,
-                                                shuffle=False, num_workers=NW)
+        # secondloader = torch.utils.data.DataLoader(trainset, batch_size=BS//args.div,
+        #                                         shuffle=False, num_workers=NW)
 
         testset = torchvision.datasets.MNIST(root='~/Private/data', train=False,
                                             download=False, transform=transforms.ToTensor())
         testloader = torch.utils.data.DataLoader(testset, batch_size=BS,
                                                     shuffle=False, num_workers=NW)
-    return trainloader, secondloader, testloader
+    # return trainloader, secondloader, testloader
+    return trainloader, testloader
 
 def get_model(args):
     if args.model == "MLP3":
@@ -168,13 +169,13 @@ def get_logger(filepath=None):
         logger.addHandler(file_handler)
     return logger
 
-
+@torch.no_grad()
 def UpdateBN(model_group):
     model, criteriaF, optimizer, scheduler, device, trainloader, testloader = model_group
     model.train()
     total = 0
     correct = 0
-    # model.clear_noise()
+    
     with torch.no_grad():
         # for images, labels in tqdm(testloader, leave=False):
         for images, labels in trainloader:
@@ -182,63 +183,60 @@ def UpdateBN(model_group):
             # images = images.view(-1, 784)
             outputs = model(images)
 
+@torch.no_grad()
 def CEval(model_group):
     model, criteriaF, optimizer, scheduler, device, trainloader, testloader = model_group
     model.eval()
     total = 0
     correct = 0
-    with torch.no_grad():
-        for images, labels in testloader:
-            images, labels = images.to(device), labels.to(device)
-            # images = images.view(-1, 784)
-            outputs = model(images)
-            if len(outputs) == 2:
-                outputs = outputs[0]
-            predictions = outputs.argmax(dim=1)
-            correction = predictions == labels
-            correct += correction.sum()
-            total += len(correction)
+
+    for images, labels in testloader:
+        images, labels = images.to(device), labels.to(device)
+        # images = images.view(-1, 784)
+        outputs = model(images)
+        predictions = outputs.argmax(dim=1)
+        correction = predictions == labels
+        correct += correction.sum()
+        total += len(correction)
     return (correct/total).cpu().item()
 
+@torch.no_grad()
 def MEval(model_group, noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs):
     model, criteriaF, optimizer, scheduler, device, trainloader, testloader = model_group
     model.eval()
     total = 0
     correct = 0
     model.clear_noise()
-    with torch.no_grad():
-        model.set_noise_multiple(noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
-        for images, labels in testloader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            if len(outputs) == 2:
-                outputs = outputs[0]
-            predictions = outputs.argmax(dim=1)
-            correction = predictions == labels
-            correct += correction.sum()
-            total += len(correction)
+    
+    model.set_noise_multiple(noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
+    for images, labels in testloader:
+        images, labels = images.to(device), labels.to(device)
+        outputs = model(images)
+        predictions = outputs.argmax(dim=1)
+        correction = predictions == labels
+        correct += correction.sum()
+        total += len(correction)
     return (correct/total).cpu().item()
 
+@torch.no_grad()
 def MEachEval(model_group, noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs):
     model, criteriaF, optimizer, scheduler, device, trainloader, testloader = model_group
     model.eval()
     total = 0
     correct = 0
     model.clear_noise()
-    with torch.no_grad():
-        for images, labels in testloader:
-            model.clear_noise()
-            model.set_noise_multiple(noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
-            # model.set_SPU(s_rate, p_rate, dev_var)
-            images, labels = images.to(device), labels.to(device)
-            # images = images.view(-1, 784)
-            outputs = model(images)
-            if len(outputs) == 2:
-                outputs = outputs[0]
-            predictions = outputs.argmax(dim=1)
-            correction = predictions == labels
-            correct += correction.sum()
-            total += len(correction)
+
+    for images, labels in testloader:
+        model.clear_noise()
+        model.set_noise_multiple(noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
+        # model.set_SPU(s_rate, p_rate, dev_var)
+        images, labels = images.to(device), labels.to(device)
+        # images = images.view(-1, 784)
+        outputs = model(images)
+        predictions = outputs.argmax(dim=1)
+        correction = predictions == labels
+        correct += correction.sum()
+        total += len(correction)
     return (correct/total).cpu().item()
 
 def MTrain(model_group, epochs, header, noise_type, dev_var, rate_max, rate_zero, write_var, verbose=False, **kwargs):
