@@ -56,6 +56,7 @@ def confused_padding(activation, padding):
     padded_act = nn.functional.pad(activation, new_padding, "constant", 0)
     return padded_act
 
+@torch.compile
 def sepConv2d(activation, weight, A_quant, array_size, padding="same"):
     # Only supports group = 1, stride = 1
     # Only supports kernel size with odd numbers
@@ -80,8 +81,7 @@ def sepConv2d(activation, weight, A_quant, array_size, padding="same"):
             e_j = j + output_act_size[2]
             for k in range(weight.shape[3]):
                 e_k = k + output_act_size[3]
-                psum = nn.functional.conv2d(padded_act[:,start:end,:,:], weight[:,start:end,j:j+1,k:k+1])
-                psum = psum[:,:,j:e_j,k:e_k]
-                output_act[:,:,:,:] += A_quant[i][j][k](psum)
+                psum = nn.functional.conv2d(padded_act[:,start:end,j:e_j,k:e_k], weight[:,start:end,j:j+1,k:k+1])
+                output_act += A_quant[i][j][k](psum)
                 
     return output_act
