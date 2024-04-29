@@ -28,6 +28,11 @@ quant_config = {
         N_ADC=6,
         array_size=64
     ),
+    "Res18": QuantConfig(
+        N_weight=6,
+        N_ADC=6,
+        array_size=64
+    ),
 }
 
 identity_mapping = {

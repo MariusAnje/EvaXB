@@ -9,6 +9,7 @@ from models import MLP3, LeNet, CIFAR
 from torch import optim
 import logging
 from tqdm import tqdm
+import resnet
 
 def get_dataset(args, BS, NW):
     if args.model == "CIFAR" or args.model == "Res18" or args.model == "QCIFAR" or args.model == "QRes18" or args.model == "QDENSE":
@@ -116,8 +117,8 @@ def get_model(args):
         model = LeNet(args.device_type)
     elif args.model == "CIFAR":
         model = CIFAR(args.device_type)
-#     elif args.model == "Res18":
-#         model = resnet.resnet18(num_classes = 10)
+    elif args.model == "Res18":
+        model = resnet.resnet18(num_classes = 10, args=args)
 #     elif args.model == "TIN":
 #         model = resnet.resnet18(num_classes = 200)
 #     elif args.model == "QLeNet":

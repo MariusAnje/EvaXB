@@ -9,6 +9,8 @@ import numpy as np
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--train_epoch', action='store', type=int, default=100,
+            help='# of epochs for training')
     parser.add_argument('--noise_epoch', action='store', type=int, default=100,
             help='# of epochs of noise validations')
     parser.add_argument('--dev_var', action='store', type=float, default=0.3,

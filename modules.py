@@ -39,7 +39,7 @@ class QuantMapping(torch.nn.Module):
             return self.func(self.N, x, None, self.mapping_w)
 
 class Quant(nn.Module):
-    def __init__(self, N, running=True):
+    def __init__(self, N, running=True, momentum=0.9):
         super().__init__()
         self.running = running
         self.register_buffer('running_range', torch.ones(1))
@@ -143,7 +143,7 @@ class CrossConv2d(NModule):
             #         for v in k:
             #             v.running_range.data = self.q_a_train.running_range.data
         else:
-            x = sepConv2d(x, self.q_w_f(self.op.weight) + self.noise, self.q_a_f, self.array_size, padding=self.op.padding)
+            x = sepConv2d(x, self.q_w_f(self.op.weight) + self.noise, self.q_a_f, self.array_size, padding=self.op.padding, stride=self.op.stride)
         if self.op.bias is not None:
             x += self.op.bias.reshape(1,-1,1,1).expand_as(x)
         return x
@@ -165,6 +165,8 @@ class NModel(nn.Module):
         self.init_config(model_name, device_type)
     
     def init_config(self, model_name, device_type):
+        self.model_name = model_name
+        self.device_type = device_type
         config = quant_config[model_name]
         self.N_weight=config.N_weight
         self.N_ADC=config.N_ADC
