@@ -1,10 +1,42 @@
 import torch
 from torch import autograd
 from torch import nn
-from Functions import QuantFunction, sepMM, sepConv2d
+from Functions import QuantFunction, QuantMappingFunction, sepMM, sepConv2d
 from noise import set_noise_multiple
 import numpy as np
-from configs import quant_config
+from configs import quant_config, noise_config
+
+class QuantMapping(torch.nn.Module):
+    def __init__(self, N, running=True, mapping=None) -> None:
+        super().__init__()
+        self.running = running
+        self.register_buffer('running_range', torch.ones(1))
+        self.running_range
+        self.N = N
+        self.func = QuantMappingFunction.apply
+        self.momentum = 0.9
+        if mapping is None:
+            self.mapping_w = None
+        else:
+            total = len(mapping)
+            self.mapping_w = torch.ones(total, 1)
+            self.mapping_w.requires_grad = False
+            for i in range(total):
+                self.mapping_w[i,0] = mapping[i]
+    
+    def forward(self, x):
+        if self.mapping_w is not None:
+            if self.mapping_w.device != x.device:
+                self.mapping_w = self.mapping_w.to(x.device)
+        if self.running:
+            if self.training:
+                if self.running_range == 0:
+                    self.running_range += x.abs().max().item()
+                else:
+                    self.running_range = self.running_range * self.momentum + x.abs().max().item() * (1-self.momentum)
+            return self.func(self.N, x, self.running_range, self.mapping_w)
+        else:
+            return self.func(self.N, x, None, self.mapping_w)
 
 class Quant(nn.Module):
     def __init__(self, N, running=True):
@@ -62,14 +94,15 @@ class NModule(nn.Module):
             self.original_b = None
 
 class CrossLinear(NModule):
-    def __init__(self, in_features, out_features, bias=True, N_weight=4, N_ADC=4, array_size=32) -> None:
+    def __init__(self, in_features, out_features, bias=True, 
+                 N_weight=4, N_ADC=4, array_size=32, mapping=None) -> None:
         super().__init__()
         self.op = nn.Linear(in_features, out_features, bias)
         self.register_buffer('noise', torch.zeros_like(self.op.weight))
         self.register_buffer('mask', torch.ones_like(self.op.weight))
         self.running_act = None
-        self.q_w_f = Quant(N_weight, False)
-        self.q_a_train = Quant(N_ADC, True)
+        self.q_w_f = QuantMapping(N_weight, False, mapping)
+        self.q_a_train = QuantMapping(N_ADC, True)
         array_number = int(np.ceil(in_features / array_size)) # not exactly this meaning but close
         self.q_a_f = nn.ModuleList([Quant(N_ADC, True) for _ in range(array_number)])
         self.array_size = array_size
@@ -87,7 +120,8 @@ class CrossLinear(NModule):
             return x
 
 class CrossConv2d(NModule):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', N_weight=4, N_ADC=4, array_size=32):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', 
+                 N_weight=4, N_ADC=4, array_size=32, mapping=None):
         super().__init__()
         self.op = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
         self.register_buffer('noise', torch.zeros_like(self.op.weight))
@@ -95,7 +129,7 @@ class CrossConv2d(NModule):
         self.function = nn.functional.conv2d
         self.scale = 1.0
         self.running_act = None
-        self.q_w_f = Quant(N_weight, False)
+        self.q_w_f = QuantMapping(N_weight, False, mapping)
         self.q_a_train = Quant(N_ADC, True)
         array_number = int(np.ceil(in_channels / array_size)) # not exactly this meaning but close
         self.q_a_f = nn.ModuleList([nn.ModuleList([nn.ModuleList([Quant(N_ADC, True) for _ in range(self.op.kernel_size[1])]) for _ in range(self.op.kernel_size[0])]) for _ in range(array_number)])
@@ -122,17 +156,20 @@ def num_flat_features(x):
     return num_features
 
 class NModel(nn.Module):
-    def __init__(self, model_name):
+    def __init__(self, model_name=None, device_type="RRAM1"):
         super().__init__()
         self.original_w = None
         self.original_b = None
-        self.init_config(model_name)
+        if model_name is None:
+            model_name = "MLP3"
+        self.init_config(model_name, device_type)
     
-    def init_config(self, model_name):
+    def init_config(self, model_name, device_type):
         config = quant_config[model_name]
         self.N_weight=config.N_weight
         self.N_ADC=config.N_ADC
         self.array_size=config.array_size
+        self.mapping=noise_config[device_type].mapping
     
     def set_noise_multiple(self, noise_type, dev_var, rate_max=0, rate_zero=0, write_var=0, **kwargs):
         for mo in self.modules():
@@ -173,7 +210,9 @@ class NModel(nn.Module):
         return x.view(-1, num_flat_features(x))
     
     def get_conv2d(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'):
-        return CrossConv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode, N_weight=self.N_weight,N_ADC=self.N_ADC,array_size=self.array_size)
+        return CrossConv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode, 
+                           N_weight=self.N_weight,N_ADC=self.N_ADC,array_size=self.array_size,mapping=self.mapping)
 
     def get_linear(self, in_features, out_features, bias=True):
-        return CrossLinear(in_features, out_features, bias, N_weight=self.N_weight,N_ADC=self.N_ADC,array_size=self.array_size)
+        return CrossLinear(in_features, out_features, bias, 
+                           N_weight=self.N_weight,N_ADC=self.N_ADC,array_size=self.array_size,mapping=self.mapping)

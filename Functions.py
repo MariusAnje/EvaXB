@@ -3,6 +3,24 @@ from torch import autograd
 from torch import nn
 import numpy as np
 
+class MappingFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, in_tensor, mapping, total):
+        sign = in_tensor.sign()
+        res = torch.zeros_like(in_tensor)
+        x = in_tensor.abs().long()
+        scale = 1
+        while not (x == 0).all():
+            res += scale * mapping(x % total).view(sign.size())
+            scale *= total
+            x = torch.div(x, total, rounding_mode='floor')
+        return res * sign
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return grad_output, None, None
+
+
 class QuantFunction(autograd.Function):
     @staticmethod
     def forward(ctx, N, input, input_range=None):
@@ -19,6 +37,41 @@ class QuantFunction(autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         return None, grad_output, None
+
+
+def mapping_func(in_tensor, mapping):
+    if mapping is not None:
+        total = mapping.shape[0]
+        sign = in_tensor.sign()
+        res = torch.zeros_like(in_tensor)
+        x = in_tensor.abs().long()
+        scale = 1
+        while not (x == 0).all():
+            res += scale * torch.nn.functional.embedding(x % total, mapping).view(sign.size())
+            scale *= total
+            x = torch.div(x, total, rounding_mode='floor')
+        return res * sign
+    else:
+        return in_tensor
+
+class QuantMappingFunction(autograd.Function):
+    @staticmethod
+    def forward(ctx, N, input, input_range=None, mapping=None):
+        integer_range = pow(2, N) - 1
+        if input_range is None:
+            det = input.abs().max() / integer_range
+        else:
+            det = input_range / integer_range
+        if det == 0:
+            return input
+        else:
+            int_input = (input/det).round().clamp(-integer_range, integer_range)
+            mapped_input = mapping_func(int_input, mapping)
+            return mapped_input * det
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return None, grad_output, None, None
 
 def sepMM(in_vect, w_mat, A_quant, array_size):
     if type(array_size) == tuple:

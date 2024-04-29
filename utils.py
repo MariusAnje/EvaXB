@@ -104,26 +104,28 @@ def get_dataset(args, BS, NW):
     return trainloader, testloader
 
 def get_model(args):
+    if not hasattr(args, "device_type"):
+        args.device_type = "RRAM1"
     if args.model == "MLP3":
-        model = MLP3()
+        model = MLP3(args.device_type)
 #     elif args.model == "MLP3_2":
-#         model = SMLP3()
+#         model = SMLP3(args.device_type)
 #     elif args.model == "MLP4":
-#         model = SMLP4()
+#         model = SMLP4(args.device_type)
     elif args.model == "LeNet":
-        model = LeNet()
+        model = LeNet(args.device_type)
     elif args.model == "CIFAR":
-        model = CIFAR()
+        model = CIFAR(args.device_type)
 #     elif args.model == "Res18":
 #         model = resnet.resnet18(num_classes = 10)
 #     elif args.model == "TIN":
 #         model = resnet.resnet18(num_classes = 200)
 #     elif args.model == "QLeNet":
-#         model = QSLeNet()
+#         model = QSLeNet(args.device_type)
 #     elif args.model == "QCIFAR":
-#         model = QCIFAR()
+#         model = QCIFAR(args.device_type)
 #     elif args.model == "QCIFAR100":
-#         model = QCIFAR100()
+#         model = QCIFAR100(args.device_type)
 #     elif args.model == "QRes18":
 #         model = qresnet.resnet18(num_classes = 10)
 #     elif args.model == "QResC100":
@@ -135,7 +137,7 @@ def get_model(args):
 #     elif args.model == "QVGG":
 #         model = qvgg.vgg16(num_classes = 1000)
 #     elif args.model == "Adv":
-#         model = SAdvNet()
+#         model = SAdvNet(args.device_type)
 #     elif args.model == "QVGGIN":
 #         model = qvgg.vgg16(num_classes = 1000)
 #     elif args.model == "QResIN":

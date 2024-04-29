@@ -19,8 +19,9 @@ if __name__ == "__main__":
             help='device used')
     parser.add_argument('--verbose', action='store', type=str2bool, default=False,
             help='see training process')
-    parser.add_argument('--model', action='store', default="MLP4", choices=["MLP3", "MLP3_2", "MLP4", "LeNet", "CIFAR", "Res18", "TIN", "QLeNet", "QCIFAR", "QRes18", "QDENSE", "QTIN", "QVGG", "Adv", "QVGGIN", "QResIN"],
-            help='model to use')
+    parser.add_argument('--model', action='store', default="MLP3", 
+                choices=["MLP3", "MLP3_2", "MLP4", "LeNet", "CIFAR", "Res18", "TIN", "QLeNet", "QCIFAR", "QRes18", "QDENSE", "QTIN", "QVGG", "Adv", "QVGGIN", "QResIN"],
+                help='model to use')
     parser.add_argument('--header', action='store',type=int, default=1,
             help='use which saved state dict')
     parser.add_argument('--model_path', action='store', default="./pretrained",

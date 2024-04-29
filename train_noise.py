@@ -16,11 +16,13 @@ if __name__ == "__main__":
             help='device variation [std] before write and verify')
     parser.add_argument('--write_var', action='store', type=float, default=0.03,
             help='device variation [std] after write and verify')
+    parser.add_argument('--device_type', action='store', default="RRAM1",
+            help='type of device, e.g., RRAM1')
     parser.add_argument('--compute_device', action='store', default="cuda:0",
             help='device used')
     parser.add_argument('--verbose', action='store', type=str2bool, default=False,
             help='see training process')
-    parser.add_argument('--model', action='store', default="MLP4", choices=["MLP3", "MLP3_2", "MLP4", "LeNet", "CIFAR", "Res18", "TIN", "QLeNet", "QCIFAR", "QRes18", "QDENSE", "QTIN", "QVGG", "Adv", "QVGGIN", "QResIN"],
+    parser.add_argument('--model', action='store', default="MLP3", choices=["MLP3", "MLP3_2", "MLP4", "LeNet", "CIFAR", "Res18", "TIN", "QLeNet", "QCIFAR", "QRes18", "QDENSE", "QTIN", "QVGG", "Adv", "QVGGIN", "QResIN"],
             help='model to use')
     parser.add_argument('--alpha', action='store', type=float, default=1e6,
             help='weight used in saliency - substract')

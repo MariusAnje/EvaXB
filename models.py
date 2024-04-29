@@ -3,8 +3,8 @@ from torch import nn
 from modules import NModel
 from modules import CrossLinear, CrossConv2d
 class MLP3(NModel):
-    def __init__(self):
-        super().__init__("MLP3")
+    def __init__(self, device_type="RRAM1"):
+        super().__init__("MLP3", device_type)
         hidden = 8
         # self.N_weight=4
         # self.N_ADC=4
@@ -25,8 +25,8 @@ class MLP3(NModel):
 
 class LeNet(NModel):
 
-    def __init__(self):
-        super().__init__("LeNet")
+    def __init__(self, device_type="RRAM1"):
+        super().__init__("LeNet", device_type)
         self.conv1 = self.get_conv2d(1, 6, 3, padding=1)
         self.conv2 = self.get_conv2d(6, 16, 3, padding=1)
         # an affine operation: y = Wx + b
@@ -58,8 +58,8 @@ class LeNet(NModel):
 
 
 class CIFAR(NModel):
-    def __init__(self):
-        super().__init__("CIFAR")
+    def __init__(self, device_type="RRAM1"):
+        super().__init__("CIFAR", device_type)
         # self.N_weight=6
         # self.N_ADC=6
         # self.array_size=64
