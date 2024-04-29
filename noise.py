@@ -65,7 +65,7 @@ def set_four(self, dev_var, s_rate, N, m):
     dev_var = dev_var / np.sqrt((s_rate**2 * 0.4 + 0.6))
     dev_var_list = [1., s_rate, s_rate, 1.]
     scale = self.op.weight.abs().max().item()
-    mask = ((1/6 < (self.op.weight.abs() / scale)) * ((self.op.weight.abs() / scale) < 5/6)).float()
+    mask = ((0.25 < (self.op.weight.abs() / scale)) * ((self.op.weight.abs() / scale) < 0.75)).float()
     new_sigma = 0
     for i in range(1, N//m + 1):
         new_sigma += pow(2, - i*m) ** 2
