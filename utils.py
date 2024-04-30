@@ -204,6 +204,23 @@ def CEval(model_group):
     return (correct/total).cpu().item()
 
 @torch.no_grad()
+def UpRange(model_group):
+    model, criteriaF, optimizer, scheduler, device, trainloader, testloader = model_group
+    model.train()
+    total = 0
+    correct = 0
+
+    for images, labels in trainloader:
+        images, labels = images.to(device), labels.to(device)
+        # images = images.view(-1, 784)
+        outputs = model(images)
+    #     predictions = outputs.argmax(dim=1)
+    #     correction = predictions == labels
+    #     correct += correction.sum()
+    #     total += len(correction)
+    # return (correct/total).cpu().item()
+
+@torch.no_grad()
 def MEval(model_group, noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs):
     model, criteriaF, optimizer, scheduler, device, trainloader, testloader = model_group
     model.eval()
@@ -232,9 +249,7 @@ def MEachEval(model_group, noise_type, dev_var, rate_max, rate_zero, write_var, 
     for images, labels in testloader:
         model.clear_noise()
         model.set_noise_multiple(noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
-        # model.set_SPU(s_rate, p_rate, dev_var)
         images, labels = images.to(device), labels.to(device)
-        # images = images.view(-1, 784)
         outputs = model(images)
         predictions = outputs.argmax(dim=1)
         correction = predictions == labels
@@ -263,7 +278,7 @@ def MTrain(model_group, epochs, header, noise_type, dev_var, rate_max, rate_zero
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        model.make_slow()
+        # model.make_slow()
         test_acc = MEachEval(model_group, noise_type, dev_var, rate_max, rate_zero, write_var, **kwargs)
         model.clear_noise()
         noise_free_acc = CEval(model_group)

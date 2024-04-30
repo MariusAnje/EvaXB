@@ -82,7 +82,7 @@ def sepMM(in_vect, w_mat, A_quant, array_size):
     w_split = torch.split(w_mat, split_size_or_sections=rows, dim=1)
     res = 0
     for i in range(len(in_split)):
-        res += A_quant[i](in_split[i].mm(w_split[i].T))
+        res += A_quant(in_split[i].mm(w_split[i].T))
     return res
 
 def cal_output_size(activation, weight, stride=1, padding=0):
@@ -135,6 +135,6 @@ def sepConv2d(activation, weight, A_quant, array_size, padding="same", stride=1)
             for k in range(weight.shape[3]):
                 e_k = k + output_act_size[3] * stride[1]
                 psum = nn.functional.conv2d(padded_act[:,start:end,j:e_j,k:e_k], weight[:,start:end,j:j+1,k:k+1], stride=stride)
-                output_act += A_quant[i][j][k](psum)
+                output_act += A_quant(psum)
                 
     return output_act

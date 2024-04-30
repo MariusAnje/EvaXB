@@ -2,7 +2,7 @@ import argparse
 import torch
 from utils import str2bool
 from utils import get_dataset, get_logger, get_model, prepare_model
-from utils import MTrain
+from utils import MTrain, UpRange, CEval, MEachEval
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -40,6 +40,8 @@ if __name__ == "__main__":
 
     print(args)
 
+    header = args.header
+
     BS = 128
     NW = 4
     trainloader, testloader = get_dataset(args, BS, NW)
@@ -50,4 +52,18 @@ if __name__ == "__main__":
     criteria = torch.nn.CrossEntropyLoss()
     model_group = model, criteria, optimizer, scheduler, compute_device, trainloader, testloader
 
-    MTrain(model_group, args.train_epoch, args.header, "Gaussian", args.train_var, 1, 1, 0, verbose=True, N=1, m=1)
+    MTrain(model_group, args.train_epoch, header, "Gaussian", args.train_var, 1, 1, 0, verbose=True, N=1, m=1)
+
+    state_dict = torch.load(f"tmp_best_{header}.pt")
+    model.load_state_dict(state_dict)
+    model.clear_noise()
+    print(f"Fast: No mask no noise: {CEval(model_group):.4f}")
+    performance = MEachEval(model_group, "Gaussian", args.train_var, 1, 1, 0, N=1, m=1)
+    print(f"Fast: No mask noise acc: {performance:.4f}")
+    
+    model.make_slow()
+
+    UpRange(model_group)
+    torch.save(model.state_dict(), f"saved_B_{header}_noise_{args.train_var}.pt")
+
+    print(f"Slow: No mask no noise: {CEval(model_group):.4f}")
