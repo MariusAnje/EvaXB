@@ -58,7 +58,7 @@ no_mapping = {
 
 noise_config = {
     "RRAM1": NoiseConfig(
-        noise_type="Gaussian",
+        noise_type="Four",
         rate_max=1,
         rate_zero=1,
         m=1,
