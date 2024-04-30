@@ -62,4 +62,4 @@ if __name__ == "__main__":
         model.clear_noise()
         this_noise_acc = MEval(model_group, n_cfg.noise_type, args.dev_var, n_cfg.rate_max, n_cfg.rate_zero, 0, verbose=True, N=model.N_weight, m=n_cfg.m)
         noise_acc.append(this_noise_acc)
-    print(f"noise acc, mean: {np.mean(noise_acc):4f}, std: {np.std(noise_acc):4f}, max: {max(noise_acc):4f}")
+    print(f"noise acc, mean: {np.mean(noise_acc):.4f}, std: {np.std(noise_acc):.4f}, max: {max(noise_acc):.4f}")
