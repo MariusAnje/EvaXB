@@ -52,13 +52,13 @@ if __name__ == "__main__":
     criteria = torch.nn.CrossEntropyLoss()
     model_group = model, criteria, optimizer, scheduler, compute_device, trainloader, testloader
 
-    MTrain(model_group, args.train_epoch, header, "Gaussian", args.train_var, 1, 1, 0, verbose=True, N=1, m=1)
+    MTrain(model_group, args.train_epoch, header, "Four", args.train_var, 1, 1, 0, verbose=True, N=1, m=1)
 
     state_dict = torch.load(f"tmp_best_{header}.pt")
     model.load_state_dict(state_dict)
     model.clear_noise()
     print(f"Fast: No mask no noise: {CEval(model_group):.4f}")
-    performance = MEachEval(model_group, "Gaussian", args.train_var, 1, 1, 0, N=1, m=1)
+    performance = MEachEval(model_group, "Four", args.train_var, 1, 1, 0, N=1, m=1)
     print(f"Fast: No mask noise acc: {performance:.4f}")
     
     model.make_slow()
